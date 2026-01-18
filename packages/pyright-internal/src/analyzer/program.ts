@@ -360,12 +360,19 @@ export class Program {
             return sourceFileInfo.sourceFile;
         }
 
+        // Determine the correct isInPyTypedPackage value by checking if the file
+        // is part of a py.typed package. This is important for correctly handling
+        // reportPrivateImportUsage errors when files from py.typed packages are
+        // added as tracked files (e.g., when running "pyright pkg_a pkg_b").
+        const moduleImportInfo = this._getModuleImportInfoForFile(fileUri);
+        const effectiveIsInPyTypedPackage = isInPyTypedPackage || moduleImportInfo.isThirdPartyPyTypedPresent;
+
         const sourceFile = this._sourceFileFactory.createSourceFile(
             this.serviceProvider,
             fileUri,
             (uri) => this._getModuleName(uri),
             isThirdPartyImport,
-            isInPyTypedPackage,
+            effectiveIsInPyTypedPackage,
             this._editModeTracker,
             this._console,
             this._logTracker
@@ -374,7 +381,7 @@ export class Program {
             sourceFile,
             sourceFile.isTypingStubFile() || sourceFile.isTypeshedStubFile() || sourceFile.isBuiltInStubFile(),
             isThirdPartyImport,
-            isInPyTypedPackage,
+            effectiveIsInPyTypedPackage,
             this._editModeTracker,
             {
                 isTracked: true,
